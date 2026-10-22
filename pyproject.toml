@@ -1,0 +1,46 @@
+[project]
+name = "mlops-model-serving"
+version = "0.1.0"
+description = "Production-grade HTTP serving API for a versioned churn model"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "fastapi>=0.115",
+    "pydantic>=2.9",
+    "uvicorn>=0.32",
+    "scikit-learn==1.9.1",  # must match the version that wrote models/churn-v1/model.joblib
+    "joblib==1.6.0",
+    "numpy>=2.0",
+    "pandas>=2.2",
+    "prometheus-client>=0.21",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.6", "mypy>=1.11", "pandas-stubs"]
+load = ["locust>=2.32"]  # load testing only
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.ruff]
+line-length = 100
+src = ["app", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+
+[[tool.mypy.overrides]]
+module = ["sklearn.*", "joblib.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["integration: tests against the running ASGI app", "container: tests against the built image"]
