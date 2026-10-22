@@ -28,7 +28,7 @@ packages = ["app"]
 
 [tool.ruff]
 line-length = 100
-src = ["app", "tests"]
+src = ["."]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

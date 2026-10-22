@@ -15,6 +15,6 @@ typecheck:
 	uv run mypy app
 
 test:
-	uv run pytest
+	uv run python -m pytest  # pytest.exe is blocked by Application Control on this machine
 
 check: lint typecheck test
