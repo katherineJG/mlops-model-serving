@@ -114,3 +114,24 @@ def test_invalid_config_stops_the_container() -> None:
         assert "MAX_BATCH_SIZE must be an integer" in _logs(name)
     finally:
         subprocess.run(["docker", "rm", "-f", name], capture_output=True, check=False)
+
+
+def test_docker_health_reflects_model_readiness() -> None:
+    """HEALTHCHECK probes /health/ready, so a container without a model reports unhealthy."""
+
+    def health_after(name: str, *env: str) -> str:
+        flags = ["--health-interval", "2s", "--health-retries", "2", "--health-start-period", "1s"]
+        _docker("run", "-d", "--name", name, *flags, *env, str(IMAGE))
+        for _ in range(60):
+            status = _docker("inspect", name, "--format", "{{.State.Health.Status}}")
+            if status != "starting":
+                return status
+            time.sleep(0.5)
+        return "starting"
+
+    good, bad = (f"mss-test-{uuid.uuid4().hex[:8]}" for _ in range(2))
+    try:
+        assert health_after(good) == "healthy"
+        assert health_after(bad, "-e", "MODEL_DIR=/nonexistent") == "unhealthy"
+    finally:
+        subprocess.run(["docker", "rm", "-f", good, bad], capture_output=True, check=False)

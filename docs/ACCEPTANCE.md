@@ -13,5 +13,5 @@ Status is `PASS`, `FAIL` or `NOT VERIFIED`, with evidence. Nothing is marked PAS
 | HTTP integration tests run in CI | NOT VERIFIED | `.github/workflows/ci.yml` written and YAML-parsed only; it has not run on GitHub. The same commands pass locally. |
 | Image builds successfully in the documented environment | PASS (local only) | `docker build` succeeded with Docker 29.8.2 on Windows 11 (Linux engine), base `python:3.12-slim` pinned by digest. CI build NOT VERIFIED (workflow never run). |
 | Logs and metrics avoid sensitive values and unbounded labels | PASS (limited scope) | tests assert a request ID and a payload value never appear in metrics or log messages, and unknown paths collapse to `route="unmatched"`. Log output was inspected once manually. Not a full audit. |
-| README has curl examples, configuration, health semantics, troubleshooting | NOT VERIFIED | |
-| Rollback procedure documented and tested, or marked not verified | NOT VERIFIED | |
+| README has curl examples, configuration, health semantics, troubleshooting | PASS (content present) | All four sections exist; the example responses were captured from a running container. A from-scratch walkthrough by a new contributor has not been done. |
+| Rollback procedure documented and tested, or marked not verified | PASS (local, limited) | `docs/RUNBOOK.md`: rollback from a deliberately bad image back to the previous tag, observed with `docker run` on one host. Not tested through a registry, the release workflow, Compose or under live traffic. |
