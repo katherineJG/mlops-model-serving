@@ -5,6 +5,7 @@ Source of truth for the HTTP interface. `app/schemas.py` implements it; contract
 ## Conventions
 
 - **Request ID:** if the caller sends `X-Request-ID` (1–64 chars of `[A-Za-z0-9._-]`) it is reused, otherwise the server generates a UUID4. The ID appears in logs, error bodies and the response header. It is never a metric label.
+- **Metrics:** `http_requests_total{method,route,status_class}`, `http_request_duration_seconds{method,route}`, `predict_instances_total`, `model_loaded`. `route` is the route template (`unmatched` for unknown paths) and `method` is limited to standard verbs, so label cardinality is bounded.
 - **No authentication.** The API is intended for a trusted network (see the threat notes in `ARCHITECTURE.md`). There are no admin or reload endpoints.
 - **Batch limit:** 1 to 100 instances per request. The body limit is 256 KiB; larger bodies get 413.
 - **Not exposed to callers:** stack traces, local paths, library versions, secrets, and the value of any invalid input.
@@ -99,7 +100,7 @@ Every non-2xx response from `/predict`, `/version`, unknown paths and unexpected
 |---|---|---|
 | 404 | `not_found` | Unknown path |
 | 405 | `not_found` | Known path, wrong method |
-| 413 | `payload_too_large` | Body over 256 KiB |
+| 413 | `payload_too_large` | Body over 256 KiB, by `Content-Length` or by bytes actually received (chunked) |
 | 422 | `validation_error` | Malformed JSON, missing or unknown field, wrong type, out-of-range value, bad category, empty or oversized batch. `details` lists each problem; the input value is never echoed. |
 | 500 | `internal_error` | Any unhandled exception. Fixed message, no details; the cause is logged server-side with the request ID. |
 | 503 | `model_not_ready` | `/predict` called while no verified model is loaded. Includes `Retry-After: 5`. |
@@ -117,7 +118,7 @@ Every non-2xx response from `/predict`, `/version`, unknown paths and unexpected
 | Variable | Default | Meaning |
 |---|---|---|
 | `MODEL_DIR` | `models/churn-v1` | Directory holding `manifest.json` and the artifact |
-| `MAX_BATCH_SIZE` | 100 | Upper bound for `instances` (cannot exceed 100 without a schema change) |
+| `MAX_BATCH_SIZE` | 100 | Upper bound for `instances`. Can lower the limit, never raise it above 100 (a larger batch gets 422). |
 | `LOG_LEVEL` | `INFO` | Standard Python level names |
 | `SOURCE_REVISION` | unset | Reported by `/version` |
 | `PORT` | 8000 | Uvicorn listen port |
