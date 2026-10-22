@@ -9,9 +9,9 @@ Status is `PASS`, `FAIL` or `NOT VERIFIED`, with evidence. Nothing is marked PAS
 | Internal exceptions do not leak sensitive details | PASS (one injected failure path) | `test_unhandled_exception_does_not_leak` injects a RuntimeError containing a fake secret and path; response has neither. Other unhandled-error sources are not separately tested. |
 | Model is loaded once and readiness reflects model availability | PASS | `test_model_is_loaded_once_not_per_request` (5 requests, 1 load); `test_readiness_transitions_with_artifact_state`; degraded-app contract tests |
 | Version endpoint identifies the loaded model | PASS | `test_version`, `test_degraded_service_is_alive_but_not_ready` |
-| Container runs as non-root | NOT VERIFIED | |
-| HTTP integration tests run in CI | NOT VERIFIED | |
-| Image builds successfully in the documented environment | NOT VERIFIED | |
+| Container runs as non-root | PASS (local) | `test_runs_as_non_root` against the built image: `id -u` is 10001, image `USER` is 10001; also ran with `--read-only --cap-drop ALL --no-new-privileges`. Not yet run in CI. |
+| HTTP integration tests run in CI | NOT VERIFIED | `.github/workflows/ci.yml` written and YAML-parsed only; it has not run on GitHub. The same commands pass locally. |
+| Image builds successfully in the documented environment | PASS (local only) | `docker build` succeeded with Docker 29.8.2 on Windows 11 (Linux engine), base `python:3.12-slim` pinned by digest. CI build NOT VERIFIED (workflow never run). |
 | Logs and metrics avoid sensitive values and unbounded labels | PASS (limited scope) | tests assert a request ID and a payload value never appear in metrics or log messages, and unknown paths collapse to `route="unmatched"`. Log output was inspected once manually. Not a full audit. |
 | README has curl examples, configuration, health semantics, troubleshooting | NOT VERIFIED | |
 | Rollback procedure documented and tested, or marked not verified | NOT VERIFIED | |

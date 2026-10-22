@@ -1,0 +1,43 @@
+name: Release image
+
+# Manual only. Nothing publishes on push, PR or tag. Publishing needs a person to start this
+# workflow and, once the `release` environment is configured with required reviewers, approve it.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Image tag to publish, e.g. 0.1.0"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: release
+    env:
+      VERSION: ${{ inputs.version }}  # via env, never interpolated into scripts
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.13.1"
+      - run: uv sync --locked
+      - run: uv run python -m pytest -v
+      - name: Build
+        run: |
+          IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}
+          docker build -t "$IMAGE:$VERSION" --build-arg SOURCE_REVISION=${{ github.sha }} .
+      - name: Container tests against the exact image being published
+        run: |
+          IMAGE=ghcr.io/${GITHUB_REPOSITORY,,}
+          MSS_IMAGE="$IMAGE:$VERSION" uv run python -m pytest tests/integration/test_container.py -v
+      - name: Log in to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u "${{ github.actor }}" --password-stdin
+      - name: Push
+        run: docker push "ghcr.io/${GITHUB_REPOSITORY,,}:$VERSION"

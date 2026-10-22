@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.13.1"
+      - run: uv sync --locked
+      - run: uv run ruff check .
+      - run: uv run ruff format --check .
+      - run: uv run mypy app tests
+      # unit, contract and ASGI/socket integration tests; container tests skip without MSS_IMAGE
+      - run: uv run python -m pytest -v
+
+  image:
+    runs-on: ubuntu-latest
+    needs: checks
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          version: "0.13.1"
+      - run: uv sync --locked
+      - name: Build image (not pushed)
+        run: docker build -t mlops-model-serving:ci --build-arg SOURCE_REVISION=${{ github.sha }} .
+      - name: Container smoke and HTTP tests
+        run: MSS_IMAGE=mlops-model-serving:ci uv run python -m pytest tests/integration/test_container.py -v

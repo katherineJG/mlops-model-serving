@@ -1,0 +1,15 @@
+# Local development: `docker compose -f deployment/docker-compose.yml up --build`
+services:
+  api:
+    build:
+      context: ..
+      args:
+        SOURCE_REVISION: ${SOURCE_REVISION:-local}
+    image: mlops-model-serving:local
+    ports:
+      - "127.0.0.1:8000:8000"   # loopback only: the API has no authentication
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      LOG_LEVEL: INFO
