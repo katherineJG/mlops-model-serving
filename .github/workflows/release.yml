@@ -2,9 +2,10 @@ name: Release image
 
 # Manual only. Nothing publishes on push, PR or tag.
 #
-# Approval is enforced by the `guard` job below, because required-reviewer environments are not
-# available on this repository's plan. If the repository becomes public (or the plan changes),
-# add `environment: release` to the `publish` job and configure required reviewers on it.
+# Two gates: the `guard` job checks the run is on main, started by the owner, with a valid
+# version, a matching confirmation and a green CI run for the commit. The `publish` job then
+# waits for approval from a required reviewer on the `release` environment (Settings >
+# Environments) before it builds and pushes anything.
 on:
   workflow_dispatch:
     inputs:
@@ -45,6 +46,7 @@ jobs:
   publish:
     needs: guard
     runs-on: ubuntu-latest
+    environment: release
     env:
       VERSION: ${{ inputs.version }}
     permissions:
