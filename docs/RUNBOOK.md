@@ -80,6 +80,6 @@ Correlate a caller's report with logs using the `request_id` from the error body
 - Trained on synthetic data; predictions have no real-world validity.
 - Single worker by default, about 185 req/s on the test machine under the test workload only.
 - No TLS, auth, rate limiting, tracing, or drift monitoring (Project 03).
-- GitHub Actions versions use major tags (`@v4`, `@v5`), not commit SHAs.
+- GitHub Actions are pinned to commit SHAs (checkout v4.4.0, setup-uv v5.4.2) and run on Node 20, which GitHub is deprecating; upgrading them is a manual, reviewed change.
 - The release reviewer is the repository owner, who can also approve their own run (the only maintainer); see `DECISIONS.md`.
 - `make` targets were not run on the development machine (no `make` installed); the underlying commands were.
