@@ -25,7 +25,7 @@ A container whose model failed to load stays up, reports **live 200, ready 503**
 ## Release
 
 1. Merge to `main` with green CI (CI has not run on GitHub yet; see `ACCEPTANCE.md`).
-2. Run the **Release image** workflow manually from `main`, typing the version (for example `0.1.1`) in both the version and confirm fields. A `guard` job stops the run unless: it is on `main`, the person starting it is the repository owner, the version is `MAJOR.MINOR.PATCH`, the confirmation matches, and the exact commit has a successful CI run. Then it reruns tests, builds, runs the container tests against that exact image, and pushes `ghcr.io/<owner>/<repo>:<version>`. **Not yet run.** The guard's checks were exercised locally against the real repository, but the workflow itself has not run on GitHub.
+2. Run the **Release image** workflow manually from `main`, typing the version (for example `0.1.1`) in both the version and confirm fields. A `guard` job stops the run unless: it is on `main`, the person starting it is the repository owner, the version is `MAJOR.MINOR.PATCH`, the confirmation matches, and the exact commit has a successful CI run. Then it reruns tests, builds, runs the container tests against that exact image, and pushes `ghcr.io/<owner>/<repo>:<version>`. **Verified once** with a throwaway version, `0.0.1`, on 2026-10-26: every step passed, the image pulled back from GHCR ran as non-root and `/version` reported the build commit as `source_revision`, and the throwaway package was deleted afterwards. A run with a mismatched confirmation stopped at `guard` and skipped `publish`. The guard's other rejections (non-owner, non-`main` ref, version format, commit without CI) were checked locally only.
 3. Deploy by pulling that exact tag. Never deploy `latest`; there is no `latest` tag.
 4. Check `GET /version` reports the expected `model_id`, `model_version` and `source_revision`, and `/health/ready` is 200.
 5. Keep the previous tag available; it is the rollback target.
@@ -51,7 +51,7 @@ curl -s localhost:8000/health/ready && curl -s localhost:8000/version
 | deploy `0.2.0-bad` | 200 | **503** | **503** | `null` (log: `reason: checksum_mismatch`) |
 | rollback to `0.1.0` | 200 | 200 | 200 | `churn-v1` / `1` |
 
-Not verified: rollback through a registry pull, through the release workflow, through Compose, or under live traffic. Rollback here means a short interruption while the container is replaced; there is no zero-downtime or canary mechanism (Project 05).
+Not verified: rollback by pulling a previous tag from a registry, through Compose, or under live traffic. Rollback here means a short interruption while the container is replaced; there is no zero-downtime or canary mechanism (Project 05).
 
 ## Troubleshooting by symptom
 
@@ -80,5 +80,6 @@ Correlate a caller's report with logs using the `request_id` from the error body
 - Trained on synthetic data; predictions have no real-world validity.
 - Single worker by default, about 185 req/s on the test machine under the test workload only.
 - No TLS, auth, rate limiting, tracing, or drift monitoring (Project 03).
-- CI and release workflows are written but unverified on GitHub; action versions use major tags, not SHAs.
+- GitHub Actions versions use major tags (`@v4`, `@v5`), not commit SHAs.
+- Releases have no separate approval step (see `DECISIONS.md`); starting the run is the approval.
 - `make` targets were not run on the development machine (no `make` installed); the underlying commands were.
