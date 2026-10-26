@@ -1,12 +1,19 @@
 name: Release image
 
-# Manual only. Nothing publishes on push, PR or tag. Publishing needs a person to start this
-# workflow and, once the `release` environment is configured with required reviewers, approve it.
+# Manual only. Nothing publishes on push, PR or tag.
+#
+# Approval is enforced by the `guard` job below, because required-reviewer environments are not
+# available on this repository's plan. If the repository becomes public (or the plan changes),
+# add `environment: release` to the `publish` job and configure required reviewers on it.
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Image tag to publish, e.g. 0.1.0"
+        description: "Image tag to publish, MAJOR.MINOR.PATCH (e.g. 0.1.0)"
+        required: true
+        type: string
+      confirm:
+        description: "Type the version again to confirm you want to publish it"
         required: true
         type: string
 
@@ -14,11 +21,32 @@ permissions:
   contents: read
 
 jobs:
-  publish:
+  guard:
     runs-on: ubuntu-latest
-    environment: release
+    permissions:
+      contents: read
+      actions: read
     env:
       VERSION: ${{ inputs.version }}  # via env, never interpolated into scripts
+      CONFIRM: ${{ inputs.confirm }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Check release conditions
+        run: |
+          fail() { echo "::error::$1"; exit 1; }
+          [ "$GITHUB_REF" = "refs/heads/main" ] || fail "Releases can only be run from main (got $GITHUB_REF)."
+          [ "$GITHUB_ACTOR" = "$GITHUB_REPOSITORY_OWNER" ] || fail "Only the repository owner can release."
+          echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$' || fail "Version must look like 1.2.3."
+          [ "$CONFIRM" = "$VERSION" ] || fail "Confirmation does not match the version."
+          ok=$(gh run list --repo "$GITHUB_REPOSITORY" --workflow ci.yml --commit "$GITHUB_SHA" \
+                 --status success --json conclusion --jq length)
+          [ "${ok:-0}" -ge 1 ] || fail "No successful CI run for commit $GITHUB_SHA."
+
+  publish:
+    needs: guard
+    runs-on: ubuntu-latest
+    env:
+      VERSION: ${{ inputs.version }}
     permissions:
       contents: read
       packages: write

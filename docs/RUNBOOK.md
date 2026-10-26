@@ -25,7 +25,7 @@ A container whose model failed to load stays up, reports **live 200, ready 503**
 ## Release
 
 1. Merge to `main` with green CI (CI has not run on GitHub yet; see `ACCEPTANCE.md`).
-2. Run the **Release image** workflow manually with a version (for example `0.1.1`). It reruns tests, builds, runs the container tests against that exact image, then pushes `ghcr.io/<owner>/<repo>:<version>`. It needs the `release` environment (add required reviewers in repo settings). **Not yet run.**
+2. Run the **Release image** workflow manually from `main`, typing the version (for example `0.1.1`) in both the version and confirm fields. A `guard` job stops the run unless: it is on `main`, the person starting it is the repository owner, the version is `MAJOR.MINOR.PATCH`, the confirmation matches, and the exact commit has a successful CI run. Then it reruns tests, builds, runs the container tests against that exact image, and pushes `ghcr.io/<owner>/<repo>:<version>`. **Not yet run.** The guard's checks were exercised locally against the real repository, but the workflow itself has not run on GitHub.
 3. Deploy by pulling that exact tag. Never deploy `latest`; there is no `latest` tag.
 4. Check `GET /version` reports the expected `model_id`, `model_version` and `source_revision`, and `/health/ready` is 200.
 5. Keep the previous tag available; it is the rollback target.
