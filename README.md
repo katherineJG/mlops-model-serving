@@ -108,3 +108,7 @@ No authentication (bind to loopback or an internal network). The model file is a
 ## Limitations
 
 Synthetic-data model; single Uvicorn worker (about 185 req/s measured on one machine, see the load test for caveats); no TLS, auth, rate limiting or drift monitoring.
+
+## License
+
+[MIT](LICENSE).
