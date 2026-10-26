@@ -127,7 +127,9 @@ def test_validation_errors_are_structured(
     r = client.post("/predict", json=payload)
     err = assert_error(r, 422, "validation_error")
     assert field in [d["field"] for d in err["details"]]
-    assert "SECRETVALUE" not in r.text and "999" not in r.text  # input values are never echoed
+    # input values are never echoed; the random request_id is excluded because it can contain "999"
+    echoed = err["message"] + str(err["details"])
+    assert "SECRETVALUE" not in echoed and "999" not in echoed
 
 
 def test_malformed_json_is_422(client: TestClient) -> None:
@@ -226,6 +228,8 @@ def test_metrics_use_route_templates_and_no_request_ids(client: TestClient) -> N
     text = client.get("/metrics").text
     assert 'route="/predict"' in text and 'route="/health/live"' in text
     assert 'route="unmatched"' in text
-    assert "metric-leak-check" not in text and "12345" not in text
+    # raw paths and request ids must never become labels (checked by name, not by digits that
+    # latency values could contain by chance)
+    assert "metric-leak-check" not in text and "some/random" not in text
     assert "predict_instances_total 1.0" in text
     assert "model_loaded 1.0" in text
