@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: mlops-model-serving
+    runtime: docker
+    plan: free
+    healthCheckPath: /health/ready
+    envVars:
+      - key: PORT
+        value: "8000"
